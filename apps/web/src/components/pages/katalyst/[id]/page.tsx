@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useKatalystStream } from "@/lib/use-katalyst-events";
 import { WorkstreamCard } from "@/components/katalyst/workstream-card";
@@ -18,9 +18,9 @@ type Tab = "workstreams" | "artifacts" | "blockers" | "feed";
 export default function ReactionDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }) {
-  const { id } = use(params);
+  const { id } = params;
   const reactionId = parseInt(id, 10);
   const {
     reaction,

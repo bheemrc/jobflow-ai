@@ -18,6 +18,7 @@ import {
   MessagesSquare,
   Zap,
   FlaskConical,
+  Swords,
   Inbox,
   Settings,
   ShieldCheck,
@@ -82,6 +83,7 @@ export default function Nav() {
     { href: "/group-chats", label: "Councils", icon: MessagesSquare },
     { href: "/katalyst", label: "Katalyst", icon: Zap },
     { href: "/research", label: "Research", icon: FlaskConical },
+    { href: "/arena", label: "Arena", icon: Swords },
     { href: "/inbox", label: "Inbox", badge: approvalCount || undefined, icon: Inbox },
   ];
 

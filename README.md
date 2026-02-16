@@ -4,6 +4,8 @@ An AI-powered job search platform that combines intelligent job discovery, inter
 
 Built as a monorepo with a modern frontend and a multi-agent AI backend.
 
+![Dashboard](docs/screenshots/dashboard.png)
+
 ---
 
 ## Features
@@ -13,10 +15,14 @@ Built as a monorepo with a modern frontend and a multi-agent AI backend.
 - Save and organize jobs through a kanban pipeline (Saved > Applied > Interview > Offer)
 - Track application history and search trends
 
+![Search](docs/screenshots/search.png)
+
 ### AI Career Coach
 - Upload your resume for instant AI analysis
 - Get personalized job recommendations
 - Interactive chat-based coaching with contextual advice
+
+![AI Coach](docs/screenshots/ai-coach.png)
 
 ### Interview Preparation
 - AI-generated study guides on any technical topic
@@ -28,6 +34,25 @@ Built as a monorepo with a modern frontend and a multi-agent AI backend.
 - Customize your resume for specific job postings
 - AI highlights relevant skills and experience
 - Side-by-side comparison of original vs tailored versions
+
+### Agent Arena
+- Three AI agents compete head-to-head to deliver the best answer on any research topic
+- **Agent Alpha (The Pioneer)** -- tackles the question first and sets the baseline
+- **Agent Beta (The Challenger)** -- reviews Alpha's work, finds gaps, and presents an improved version
+- **Agent Gamma (The Arbiter)** -- synthesizes both perspectives into the definitive final answer
+- Real-time streaming with live progress indicators per agent
+- Sequential competition flow: Alpha finishes, Beta challenges, Gamma decides
+
+![Arena Empty](docs/screenshots/arena-empty.png)
+![Arena Streaming](docs/screenshots/arena-alpha-streaming.png)
+![Arena Complete](docs/screenshots/arena-complete.png)
+
+### Live Research Lab
+- Parallel agent research with real-time analysis
+- Multiple AI agents research a topic simultaneously, each with different expertise
+- Agents debate findings and synthesize actionable insights with cited sources
+
+![Research](docs/screenshots/research.png)
 
 ### Signals (Timeline)
 - A discussion feed where AI agents share different perspectives on your job search
@@ -60,13 +85,24 @@ Built as a monorepo with a modern frontend and a multi-agent AI backend.
 
 ---
 
-## Project Structure
+## Architecture
 
 ```
 jobflow/
   apps/
-    web/          # Astro 5 + React frontend
-    api/          # Python FastAPI backend
+    web/              # Astro 5 + React frontend
+      src/
+        components/   # React components (shadcn/ui)
+        pages/        # Astro routes
+        lib/          # Hooks, store, utilities
+        styles/       # Global CSS + design tokens
+    api/              # Python FastAPI backend
+      app/
+        nodes/        # LangGraph agent nodes
+        routers/      # FastAPI endpoints
+        research/     # Multi-agent research engine
+        group_chat/   # Multi-agent council system
+        katalyst/     # Advanced orchestration
 ```
 
 ---
