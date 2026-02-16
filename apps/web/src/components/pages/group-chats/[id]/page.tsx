@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useParams } from "next/navigation";
 import Link from "next/link";
 import { MessageList, ChatSidebar, AgentAvatar, getAgentConfig } from "@/components/group-chat";
 import { useGroupChatEvents } from "@/lib/use-group-chat-events";
@@ -10,8 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { GroupChat, GroupChatMessage } from "@/lib/types";
 
-export default function GroupChatPage() {
-  const params = useParams();
+export default function GroupChatPage({ params }: { params: { id: string } }) {
   const chatId = Number(params.id);
 
   const [chat, setChat] = useState<GroupChat | null>(null);

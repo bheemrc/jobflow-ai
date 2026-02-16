@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState } from "react";
-import ReactMarkdown from "react-markdown";
+import Markdown from "@/components/markdown";
 import { AgentAvatar, getAgentConfig } from "./agent-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,91 +24,6 @@ function MessageBubbleComponent({ message, isLatest = false, showThread = false 
   const displayContent = isLongContent && !isExpanded
     ? message.content.slice(0, 400) + "..."
     : message.content;
-
-  // Highlight @mentions and workspace references in content
-  const highlightMentions = (content: string) => {
-    // Match @mentions, finding_N, task_N, decision_N
-    const parts = content.split(/(@\w+|(?:finding|task|decision)_\d+)/gi);
-    return parts.map((part, i) => {
-      if (part.startsWith("@")) {
-        const mentionAgent = part.slice(1).toLowerCase();
-        const mentionConfig = getAgentConfig(mentionAgent);
-        return (
-          <span
-            key={i}
-            className="inline-flex items-center font-semibold px-1.5 py-0.5 rounded-md transition-all hover:scale-105 cursor-pointer"
-            style={{
-              color: mentionConfig.color,
-              background: `${mentionConfig.color}15`,
-              boxShadow: `0 0 0 1px ${mentionConfig.color}30`,
-            }}
-          >
-            {part}
-          </span>
-        );
-      }
-      // Workspace references (finding_1, task_2, decision_1)
-      const workspaceMatch = part.match(/^(finding|task|decision)_(\d+)$/i);
-      if (workspaceMatch) {
-        const type = workspaceMatch[1].toLowerCase();
-        const colorMap: Record<string, string> = {
-          finding: "text-primary",
-          task: "text-warning",
-          decision: "text-success",
-        };
-        const bgMap: Record<string, string> = {
-          finding: "bg-primary/10",
-          task: "bg-warning/10",
-          decision: "bg-success/10",
-        };
-        return (
-          <span
-            key={i}
-            className={cn(
-              "inline-flex items-center gap-1 font-mono text-[12px] font-semibold px-1.5 py-0.5 rounded-md transition-all hover:scale-105 cursor-pointer",
-              colorMap[type],
-              bgMap[type]
-            )}
-            title={`View ${type} in workspace`}
-          >
-            {type === "finding" && (
-              <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-            )}
-            {type === "task" && (
-              <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-            )}
-            {type === "decision" && (
-              <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            )}
-            {part}
-          </span>
-        );
-      }
-      return part;
-    });
-  };
-
-  // Process children from ReactMarkdown to highlight @mentions
-  const processChildren = (children: React.ReactNode): React.ReactNode => {
-    if (typeof children === "string") {
-      return highlightMentions(children);
-    }
-    if (Array.isArray(children)) {
-      return children.map((child, i) => {
-        if (typeof child === "string") {
-          return <span key={i}>{highlightMentions(child)}</span>;
-        }
-        return child;
-      });
-    }
-    return children;
-  };
 
   // Detect tool usage in content
   const hasToolUsage = message.content.includes("\uD83D\uDD0D") ||
@@ -196,55 +111,8 @@ function MessageBubbleComponent({ message, isLatest = false, showThread = false 
           </div>
 
           {/* Content with Markdown rendering */}
-          <div className="prose text-[14px] text-foreground">
-            <ReactMarkdown
-              components={{
-                // Custom paragraph to highlight @mentions
-                p: ({ children }) => (
-                  <p className="mb-3 last:mb-0">
-                    {processChildren(children)}
-                  </p>
-                ),
-                // Custom list item
-                li: ({ children }) => (
-                  <li className="mb-1">
-                    {processChildren(children)}
-                  </li>
-                ),
-                // Style bold text
-                strong: ({ children }) => (
-                  <strong className="font-semibold text-foreground">
-                    {children}
-                  </strong>
-                ),
-                // Style links
-                a: ({ href, children }) => (
-                  <a
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline hover:no-underline text-primary"
-                  >
-                    {children}
-                  </a>
-                ),
-                // Style code
-                code: ({ children }) => (
-                  <code className="px-1.5 py-0.5 rounded text-[13px] bg-muted text-foreground">
-                    {children}
-                  </code>
-                ),
-                // Style headers
-                h1: ({ children }) => <h1 className="text-lg font-bold mb-2 mt-4 first:mt-0">{children}</h1>,
-                h2: ({ children }) => <h2 className="text-base font-bold mb-2 mt-3 first:mt-0">{children}</h2>,
-                h3: ({ children }) => <h3 className="text-sm font-bold mb-1 mt-2 first:mt-0">{children}</h3>,
-                // Style lists
-                ul: ({ children }) => <ul className="list-disc pl-5 mb-3 space-y-1">{children}</ul>,
-                ol: ({ children }) => <ol className="list-decimal pl-5 mb-3 space-y-1">{children}</ol>,
-              }}
-            >
-              {displayContent}
-            </ReactMarkdown>
+          <div className="text-[14px] text-foreground">
+            <Markdown>{displayContent}</Markdown>
           </div>
 
           {/* Read more button */}

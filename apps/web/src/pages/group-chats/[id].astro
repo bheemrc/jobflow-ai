@@ -5,7 +5,5 @@ const params = Astro.params;
 ---
 
 <BaseLayout>
-  <Page client:load />
-
-  <script is:inline define:vars={{ params }}>window.__astroParams = params;</script>
+  <Page client:load params={params} />
 </BaseLayout>
