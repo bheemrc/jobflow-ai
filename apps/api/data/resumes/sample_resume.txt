@@ -1,0 +1,43 @@
+ALEX CHEN
+Software Engineer | San Francisco, CA
+alex.chen@email.com | github.com/alexchen | linkedin.com/in/alexchen
+
+SUMMARY
+Senior Software Engineer with 6+ years of experience building scalable distributed systems.
+Passionate about backend development, cloud architecture, and developer tools.
+Seeking senior engineering roles at growth-stage startups or established tech companies.
+
+EXPERIENCE
+
+Senior Software Engineer | TechCorp Inc. | 2021 - Present
+• Led migration of monolithic application to microservices, reducing deployment time by 70%
+• Designed and implemented real-time data pipeline processing 1M+ events/day using Kafka
+• Mentored team of 4 junior engineers, establishing code review practices and documentation standards
+• Reduced infrastructure costs by 40% through optimization of AWS resources and auto-scaling policies
+
+Software Engineer | StartupXYZ | 2019 - 2021
+• Built REST APIs serving 50K daily active users with 99.9% uptime
+• Implemented CI/CD pipeline reducing release cycle from 2 weeks to 2 days
+• Developed internal tooling that saved engineering team 10+ hours/week
+• Collaborated with product team to ship 3 major features from ideation to production
+
+Junior Software Engineer | BigTech Corp | 2017 - 2019
+• Contributed to backend services handling 100M+ API requests daily
+• Wrote comprehensive test suites increasing code coverage from 45% to 85%
+• Participated in on-call rotation, resolving production incidents within SLA
+
+TECHNICAL SKILLS
+Languages: Python, Go, TypeScript, SQL
+Frameworks: FastAPI, Django, React, Node.js
+Infrastructure: AWS (ECS, Lambda, RDS, S3), Docker, Kubernetes, Terraform
+Databases: PostgreSQL, Redis, MongoDB, Elasticsearch
+Tools: Git, GitHub Actions, DataDog, Grafana
+
+EDUCATION
+B.S. Computer Science | University of California, Berkeley | 2017
+GPA: 3.7/4.0 | Relevant Coursework: Distributed Systems, Databases, Algorithms
+
+PROJECTS
+• Open-source CLI tool for API testing (500+ GitHub stars)
+• Personal finance tracker with ML-powered categorization
+• Real-time collaborative document editor using WebSockets

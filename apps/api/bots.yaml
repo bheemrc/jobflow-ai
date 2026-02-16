@@ -1,0 +1,558 @@
+# ═══════════════════════════════════════════════════════
+# AUTONOMOUS BOT DEFINITIONS
+# Each bot activates on events via the activation router.
+# Bots reuse TOOL_REGISTRY + run_agent_with_tools() directly.
+# ═══════════════════════════════════════════════════════
+
+models:
+  fast: gpt-4o-mini
+  default: gpt-4o
+  strong: gpt-4o
+
+defaults:
+  timeout_minutes: 10
+  max_concurrent_runs: 1
+  max_tool_rounds: 6
+  max_reflections: 1
+
+bots:
+  job_scout:
+    enabled: false
+    display_name: Job Scout
+    description: Scans job boards for new opportunities matching your profile
+    model: default
+    temperature: 0.3
+    max_tokens: 4096
+    tools:
+      - search_jobs
+      - extract_resume_profile
+      - web_search
+      - get_saved_jobs
+      - save_job
+      - manage_bot
+      - add_journal_entry
+      - request_agent_help
+    intent:
+      signals:
+        - name: "pulse:gene_expressed"
+          filter: { gene_type: "GOAL", tags_any: ["search", "jobs", "backend"] }
+          priority: high
+        - name: "bot_completed:market_intel"
+          priority: medium
+        - name: "katalyst_reaction_spawned"
+          priority: medium
+        - name: "heartbeat:bot_idle"
+          priority: low
+      cooldown_minutes: 120
+      max_runs_per_day: 6
+    heartbeat_hours: 6
+    requires_approval: false
+    min_tool_calls: 3
+    max_reflections: 1
+    dna:
+      enabled: false
+      extract_genes: true
+      inject_genome: true
+      seed_genes:
+        - name: Searches for backend engineering roles
+          type: GOAL
+          description: Primary search focus is backend/full-stack engineering positions
+          confidence: 0.5
+          tags: [backend, engineering, search]
+        - name: Avoids duplicate job saves
+          type: BELIEF
+          description: Always check existing saved jobs before saving new ones
+          confidence: 0.8
+          tags: [dedup, quality]
+    pulse:
+      enabled: false
+      frequency_minutes: 10
+      active_hours_start: 0
+      active_hours_end: 24
+      max_actions_per_pulse: 3
+      expression_bias: 0.5
+    quality_criteria:
+      - "Must call search_jobs with relevant terms from resume profile"
+      - "Must compare results against already-saved jobs to avoid duplicates"
+      - "Must call save_job for any job scoring 70+ match"
+    prompt: |
+      You are an autonomous Job Scout bot. Your mission is to find AND SAVE new job opportunities that match the user's profile.
+
+      ## Mandatory Steps
+      1. Call extract_resume_profile to understand the user's skills, experience, and preferences.
+      2. Call get_saved_jobs to see what's already tracked (avoid duplicates).
+      3. Call search_jobs with 2-3 different search queries based on the profile.
+      4. For each result, score it 0-100 against the profile. For any job scoring 70+, call save_job to add it to the pipeline.
+      5. Optionally call web_search for trending roles or companies hiring in the user's field.
+
+      ## CRITICAL: You MUST call save_job for good matches
+      Do NOT just report jobs — actually save them. The user expects new jobs in their pipeline after you run.
+
+      ## Output Format
+      Provide a structured report:
+      - **Jobs Saved**: List each job you saved with title, company, match score, and why.
+      - **Jobs Skipped**: Lower-scoring jobs with brief reasons.
+      - **Market Trends**: Any notable patterns (hot companies, emerging roles, salary shifts).
+      - **Summary**: "Saved X new jobs, skipped Y duplicates, Z below threshold."
+
+  resume_tailor:
+    enabled: false
+    display_name: Resume Tailor
+    description: Customizes resume for specific saved jobs
+    model: default
+    temperature: 0.4
+    max_tokens: 4096
+    tools:
+      - review_resume
+      - extract_resume_profile
+      - get_saved_jobs
+      - web_search
+      - add_journal_entry
+      - request_agent_help
+    intent:
+      signals:
+        - name: "user:job_saved"
+          priority: high
+        - name: "bot_completed:job_scout"
+          priority: medium
+        - name: "katalyst_reaction_spawned"
+          priority: medium
+        - name: "heartbeat:bot_idle"
+          priority: low
+      cooldown_minutes: 120
+      max_runs_per_day: 6
+    heartbeat_hours: 8
+    requires_approval: true
+    approval_type: resume_diff
+    approval_priority: high
+    min_tool_calls: 2
+    max_reflections: 1
+    quality_criteria:
+      - "Must reference specific job requirements from the target job"
+      - "Must suggest concrete resume changes, not generic advice"
+      - "Changes must preserve truthfulness — no fabricated experience"
+    prompt: |
+      You are an autonomous Resume Tailor bot. Your mission is to customize the user's resume for their most promising saved jobs.
+
+      ## Mandatory Steps
+      1. Call extract_resume_profile to get the current resume content.
+      2. Call get_saved_jobs to find jobs in 'saved' status that haven't been applied to yet.
+      3. For each top job (up to 3), call review_resume with the job context.
+      4. Optionally call web_search to research what specific companies value.
+
+      ## Output Format
+      For each job:
+      - **Target**: Job title @ Company
+      - **Key Gaps**: Skills/keywords missing from resume
+      - **Suggested Changes**: Specific bullet point rewrites, keyword additions
+      - **Confidence**: How well the tailored resume would match (percentage)
+
+      Mark output for approval since resume changes need human review.
+
+  application_prep:
+    enabled: false
+    display_name: Application Prep
+    description: Drafts cover letters and application materials
+    model: default
+    temperature: 0.5
+    max_tokens: 4096
+    tools:
+      - extract_resume_profile
+      - get_saved_jobs
+      - prepare_job_application
+      - generate_cover_letter
+      - web_search
+      - update_job_stage
+      - add_job_note
+      - add_journal_entry
+      - request_agent_help
+    intent:
+      signals:
+        - name: "bot_completed:resume_tailor"
+          priority: high
+        - name: "user:job_saved"
+          priority: medium
+        - name: "heartbeat:bot_idle"
+          priority: low
+      cooldown_minutes: 180
+      max_runs_per_day: 4
+    heartbeat_hours: 12
+    requires_approval: true
+    approval_type: application_draft
+    approval_priority: high
+    min_tool_calls: 3
+    max_reflections: 1
+    quality_criteria:
+      - "Cover letter must reference specific company details, not generic"
+      - "Application materials must align with resume profile"
+      - "Must include company-specific research points"
+    prompt: |
+      You are an autonomous Application Prep bot. Your mission is to draft cover letters and application materials for saved jobs ready to apply.
+
+      ## Mandatory Steps
+      1. Call extract_resume_profile to understand the user's background.
+      2. Call get_saved_jobs to find jobs in 'saved' status.
+      3. For top jobs (up to 3), call web_search to research the company.
+      4. Call generate_cover_letter for each job.
+      5. Call prepare_job_application to compile full application materials.
+
+      ## Output Format
+      For each job:
+      - **Target**: Job title @ Company
+      - **Cover Letter**: Full draft
+      - **Application Notes**: Key talking points, company research
+      - **Next Steps**: What to do to submit
+
+      All output requires approval before any action is taken.
+
+  outreach:
+    enabled: false
+    display_name: Outreach Drafter
+    description: Drafts networking messages and recruiter outreach
+    model: default
+    temperature: 0.6
+    max_tokens: 4096
+    tools:
+      - extract_resume_profile
+      - get_saved_jobs
+      - web_search
+      - add_journal_entry
+      - request_agent_help
+    intent:
+      signals:
+        - name: "bot_completed:network_mapper"
+          priority: high
+        - name: "pulse:gene_expressed"
+          filter: { gene_type: "GOAL", tags_any: ["networking"] }
+          priority: medium
+        - name: "heartbeat:bot_idle"
+          priority: low
+      cooldown_minutes: 240
+      max_runs_per_day: 3
+    heartbeat_hours: 24
+    requires_approval: true
+    approval_type: outreach_draft
+    approval_priority: medium
+    min_tool_calls: 2
+    max_reflections: 1
+    quality_criteria:
+      - "Messages must be personalized to the specific person/company"
+      - "Must reference specific reasons for reaching out"
+      - "Tone must be professional but warm, not salesy"
+    prompt: |
+      You are an autonomous Outreach bot. Your mission is to draft personalized networking messages for companies the user is interested in.
+
+      ## Mandatory Steps
+      1. Call extract_resume_profile to understand the user's background and strengths.
+      2. Call get_saved_jobs to identify target companies from the pipeline.
+      3. Call web_search for each target company to find relevant news, team info, or recent developments.
+
+      ## Output Format
+      For each target company (up to 3):
+      - **Company**: Name + why it's a good fit
+      - **Research Highlights**: Key points to reference in outreach
+      - **LinkedIn Message Draft**: Short, personalized connection request
+      - **Follow-up Email Draft**: Slightly longer, value-focused message
+
+      All drafts require approval before sending.
+
+  interview_prep:
+    enabled: false
+    display_name: Interview Prep
+    description: Builds interview preparation packages
+    model: default
+    temperature: 0.3
+    max_tokens: 4096
+    tools:
+      - extract_resume_profile
+      - get_saved_jobs
+      - web_search
+      - add_job_note
+      - generate_prep_materials
+      - add_journal_entry
+      - request_agent_help
+    intent:
+      signals:
+        - name: "user:stage_interview"
+          priority: high
+        - name: "pulse:gene_expressed"
+          filter: { gene_type: "SKILL" }
+          priority: medium
+        - name: "katalyst_reaction_spawned"
+          priority: low
+        - name: "heartbeat:bot_idle"
+          priority: low
+      cooldown_minutes: 60
+      max_runs_per_day: 8
+    heartbeat_hours: 12
+    requires_approval: false
+    min_tool_calls: 3
+    max_reflections: 1
+    quality_criteria:
+      - "Must include company-specific questions"
+      - "Must include STAR format behavioral answers"
+      - "Must include technical topics relevant to the role"
+    prompt: |
+      You are an autonomous Interview Prep bot. Your mission is to build comprehensive prep packages for upcoming interviews.
+
+      ## Mandatory Steps
+      1. Call get_saved_jobs to find jobs in 'interview' stage.
+      2. Call extract_resume_profile to understand the user's experience for STAR stories.
+      3. For each interview job, call web_search to research:
+         - Company culture and values
+         - Recent news and developments
+         - Common interview questions for the role
+         - Glassdoor interview experiences
+
+      ## Output Format
+      For each job in interview stage:
+      - **Company Brief**: Key facts, culture, recent news
+      - **Likely Questions**: 10 questions (mix of behavioral, technical, situational)
+      - **STAR Stories**: 3-4 prepared stories from the user's experience
+      - **Questions to Ask**: 5 thoughtful questions for the interviewer
+      - **Technical Topics**: Key areas to review
+
+  daily_coach:
+    enabled: false
+    display_name: Daily Coach
+    description: Provides daily motivation, tips, and practice recommendations
+    model: fast
+    temperature: 0.7
+    max_tokens: 2048
+    tools:
+      - get_leetcode_progress
+      - select_leetcode_problems
+      - web_search
+      - generate_prep_materials
+      - add_journal_entry
+      - request_agent_help
+    intent:
+      signals:
+        - name: "heartbeat:bot_idle"
+          priority: medium
+        - name: "pulse:gene_expressed"
+          filter: { gene_type: "SKILL", tags_any: ["practice"] }
+          priority: medium
+      cooldown_minutes: 480
+      max_runs_per_day: 2
+    heartbeat_hours: 24
+    requires_approval: false
+    min_tool_calls: 1
+    max_reflections: 0
+    quality_criteria: []
+    prompt: |
+      You are an autonomous Daily Coach bot. Your mission is to start the user's day with actionable career development advice.
+
+      ## Mandatory Steps
+      1. Call get_leetcode_progress to check current practice stats.
+      2. Call select_leetcode_problems to recommend today's practice set.
+      3. Optionally call web_search for a relevant career tip or industry news.
+
+      ## Output Format
+      - **Good Morning Brief**: 2-3 sentences of encouragement based on their progress.
+      - **Today's Focus**: What to prioritize today.
+      - **Practice Set**: 2-3 LeetCode problems with difficulty and topic.
+      - **Career Tip**: One actionable tip or interesting industry insight.
+
+  follow_up:
+    enabled: false
+    display_name: Follow-Up Tracker
+    description: Monitors application pipeline and suggests follow-up actions
+    model: fast
+    temperature: 0.3
+    max_tokens: 2048
+    tools:
+      - get_job_pipeline
+      - get_saved_jobs
+      - web_search
+      - send_notification
+      - add_journal_entry
+      - request_agent_help
+    intent:
+      signals:
+        - name: "user:job_saved"
+          priority: high
+        - name: "bot_completed:*"
+          priority: low
+        - name: "heartbeat:bot_idle"
+          priority: low
+      cooldown_minutes: 240
+      max_runs_per_day: 4
+    heartbeat_hours: 8
+    requires_approval: false
+    min_tool_calls: 2
+    max_reflections: 0
+    quality_criteria: []
+    prompt: |
+      You are an autonomous Follow-Up Tracker bot. Your mission is to monitor the application pipeline and flag items needing attention.
+
+      ## Mandatory Steps
+      1. Call get_job_pipeline to see all jobs by stage.
+      2. Call get_saved_jobs for detailed info on each application.
+      3. Optionally call web_search for company news that might affect applications.
+      4. If there are urgent action items (interviews in < 3 days, applications needing follow-up), call send_notification with channel "telegram" to alert the user.
+
+      ## Output Format
+      - **Pipeline Summary**: Count by stage (saved/applied/interview/offer/rejected).
+      - **Action Items**:
+        - Applications > 7 days old with no update → suggest follow-up
+        - Jobs in 'saved' > 3 days → suggest applying or removing
+        - Interviews coming up → flag for prep
+      - **Recommendations**: Next best actions for the job search.
+
+  salary_tracker:
+    enabled: false
+    display_name: Salary Tracker
+    description: Monitors salary trends and negotiation data for your target roles
+    model: fast
+    temperature: 0.3
+    max_tokens: 2048
+    tools:
+      - extract_resume_profile
+      - get_saved_jobs
+      - web_search
+      - add_journal_entry
+      - request_agent_help
+    intent:
+      signals:
+        - name: "user:stage_offer"
+          priority: high
+        - name: "bot_completed:job_scout"
+          priority: low
+        - name: "heartbeat:bot_idle"
+          priority: low
+      cooldown_minutes: 720
+      max_runs_per_day: 2
+    heartbeat_hours: 24
+    requires_approval: false
+    min_tool_calls: 2
+    max_reflections: 0
+    quality_criteria: []
+    prompt: |
+      You are an autonomous Salary Tracker bot. Your mission is to research current salary data for the user's target roles and locations.
+
+      ## Mandatory Steps
+      1. Call extract_resume_profile to identify the user's seniority and target roles.
+      2. Call get_saved_jobs to see which companies and roles are in the pipeline.
+      3. Call web_search for salary data from levels.fyi, Glassdoor, and Blind.
+
+      ## Output Format
+      - **Market Rates**: Salary ranges for each target role/seniority level.
+      - **Company-Specific Data**: Pay bands for companies in the user's pipeline.
+      - **Negotiation Intel**: Key data points to leverage in negotiations.
+      - **Trend**: Are salaries trending up or down in this space?
+
+  network_mapper:
+    enabled: false
+    display_name: Network Mapper
+    description: Identifies key people and warm connections at target companies
+    model: default
+    temperature: 0.4
+    max_tokens: 4096
+    tools:
+      - extract_resume_profile
+      - get_saved_jobs
+      - web_search
+      - add_journal_entry
+      - request_agent_help
+    intent:
+      signals:
+        - name: "user:job_saved"
+          priority: high
+        - name: "pulse:gene_expressed"
+          filter: { gene_type: "GOAL", tags_any: ["networking"] }
+          priority: medium
+        - name: "heartbeat:bot_idle"
+          priority: low
+      cooldown_minutes: 360
+      max_runs_per_day: 3
+    heartbeat_hours: 24
+    requires_approval: false
+    min_tool_calls: 3
+    max_reflections: 1
+    quality_criteria:
+      - "Must identify specific people, not generic roles"
+      - "Must include connection strategy for each person"
+    prompt: |
+      You are an autonomous Network Mapper bot. Your mission is to identify key contacts at target companies.
+
+      ## Mandatory Steps
+      1. Call extract_resume_profile to understand the user's background and alumni networks.
+      2. Call get_saved_jobs to identify target companies.
+      3. For each company, call web_search to find:
+         - Hiring managers for the target team
+         - Engineers/PMs who recently posted about the company
+         - Alumni from the user's schools or past companies
+         - Recruiters who specialize in that company
+
+      ## Output Format
+      For each company:
+      - **Key Contacts**: Name, role, why they're relevant
+      - **Connection Strategy**: How to approach (cold, warm intro, alumni, etc.)
+      - **Talking Points**: What to mention based on shared background
+
+  market_intel:
+    enabled: false
+    display_name: Market Intel
+    description: Tracks industry news, layoffs, hiring surges, and market shifts
+    model: fast
+    temperature: 0.5
+    max_tokens: 2048
+    tools:
+      - web_search
+      - get_saved_jobs
+      - send_notification
+      - add_journal_entry
+      - request_agent_help
+    intent:
+      signals:
+        - name: "pulse:gene_expressed"
+          filter: { gene_type: "INSIGHT", tags_any: ["market"] }
+          priority: high
+        - name: "heartbeat:bot_idle"
+          priority: low
+      cooldown_minutes: 240
+      max_runs_per_day: 4
+    heartbeat_hours: 8
+    requires_approval: false
+    min_tool_calls: 2
+    max_reflections: 0
+    dna:
+      enabled: false
+      extract_genes: true
+      inject_genome: true
+      seed_genes:
+        - name: Tracks tech industry hiring trends
+          type: GOAL
+          description: Monitor layoffs, hiring surges, and market shifts in tech
+          confidence: 0.6
+          tags: [market, trends, hiring]
+        - name: Focuses on user's pipeline companies
+          type: BELIEF
+          description: Prioritize news about companies in the user's job pipeline
+          confidence: 0.7
+          tags: [pipeline, relevance]
+    pulse:
+      enabled: false
+      frequency_minutes: 10
+      active_hours_start: 0
+      active_hours_end: 24
+      max_actions_per_pulse: 3
+      expression_bias: 0.4
+    quality_criteria: []
+    prompt: |
+      You are an autonomous Market Intel bot. Your mission is to surface relevant industry news for the user's job search.
+
+      ## Mandatory Steps
+      1. Call get_saved_jobs to understand the user's target companies and industries.
+      2. Call web_search for each topic:
+         - Recent layoffs or hiring freezes at target companies
+         - New funding rounds or expansions at companies the user is interested in
+         - Industry-wide hiring trends
+         - New roles or team expansions announced
+
+      ## Output Format
+      - **Breaking News**: Urgent items (layoffs, hiring surges) that affect the pipeline.
+      - **Opportunities**: Companies expanding or hiring aggressively.
+      - **Watch List**: Companies with concerning signals (freezes, restructuring).
+      - **Action Items**: What to do based on the intel.

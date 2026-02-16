@@ -1,0 +1,15 @@
+.env
+.env.local
+.env.example
+venv/
+__pycache__/
+.git/
+.next/
+genomes/
+data/sessions/
+data/coach_sessions/
+data/resumes/*.pdf
+data/resumes/*.docx
+*.pyc
+*.log
+.DS_Store

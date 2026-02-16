@@ -1,0 +1,11 @@
+---
+import BaseLayout from "../../layouts/Base.astro";
+import Page from "../../components/pages/katalyst/[id]/page.tsx";
+const params = Astro.params;
+---
+
+<BaseLayout>
+  <Page client:load />
+
+  <script is:inline define:vars={{ params }}>window.__astroParams = params;</script>
+</BaseLayout>

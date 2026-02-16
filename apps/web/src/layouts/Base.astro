@@ -1,0 +1,31 @@
+---
+import "../styles/globals.css";
+import Nav from "../components/nav.tsx";
+
+const { title = "JobFlow AI" } = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content="AI-powered job search, interview prep, and career coaching" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-background text-foreground font-sans antialiased">
+    <div class="flex h-screen overflow-hidden">
+      <Nav client:load />
+      <main class="flex-1 overflow-auto relative">
+        <div class="h-full">
+          <slot />
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,26 @@
+# Environment variables
+.env
+.env.local
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Build output
+.next/
+
+# Runtime data
+data/sessions/
+data/coach_sessions/
+data/resumes/*.pdf
+data/resumes/*.docx
+genomes/*.yaml
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
