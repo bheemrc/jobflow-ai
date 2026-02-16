@@ -198,4 +198,4 @@ See `apps/api/.env.example` and `apps/web/.env.example` for all options.
 
 ## License
 
-MIT -- see [LICENSE](apps/api/LICENSE) for details.
+MIT -- see [LICENSE](LICENSE) for details.
